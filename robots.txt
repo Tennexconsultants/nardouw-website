@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nardouw.co.za/sitemap.xml
