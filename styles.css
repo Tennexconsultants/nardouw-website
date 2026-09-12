@@ -22,7 +22,7 @@ a{color:inherit;text-decoration:none}
 button,input,select,textarea{font:inherit}
 .container{width:min(var(--max),calc(100% - 56px));margin:auto}
 .display{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;line-height:.96;letter-spacing:-.025em}
-.eyebrow{text-transform:uppercase;letter-spacing:.20em;font-size:.78rem;font-weight:600;margin:0 0 18px;color:var(--orange)}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:clamp(.90rem,1.15vw,1rem);font-weight:600;margin:0 0 18px;color:var(--orange)}
 .muted{color:var(--muted)}
 
 /* Brand header */
@@ -162,7 +162,7 @@ button,input,select,textarea{font:inherit}
 
 /* Orange accent text scale refinement */
 @media(max-width:600px){
-  .eyebrow{font-size:.74rem;letter-spacing:.18em}
+  .eyebrow{font-size:.86rem;letter-spacing:.13em}
   .contact-item small{font-size:.70rem}
   .rate strong{font-size:2rem}
   .footer-tag{font-size:1.10rem}
