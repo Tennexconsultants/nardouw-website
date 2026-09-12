@@ -1,0 +1,10 @@
+/* Activities page only: create visual breathing room between the hero and first activity. */
+.page-hero + .activity {
+  margin-top: 18px;
+}
+
+@media (max-width: 600px) {
+  .page-hero + .activity {
+    margin-top: 12px;
+  }
+}
