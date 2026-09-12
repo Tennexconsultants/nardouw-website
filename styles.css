@@ -152,3 +152,10 @@ button,input,select,textarea{font:inherit}
   .footer-icon-link img{width:39px;height:39px}
   .footer-icon-link:last-child img{width:42px;height:42px}
 }
+
+/* Home mosaic focal-point correction: keep the cabin visible in the tall left tile. */
+@media (min-width: 901px){
+  .home-mosaic img:first-child{
+    object-position: 74% center;
+  }
+}
