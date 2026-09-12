@@ -64,3 +64,4 @@ Do not add wildcard DNS records.
 
 LOCAL IMAGES
 All site photographs in /images are local copies derived from the user-supplied originals. The tortoise image was intentionally omitted because the original file was unavailable. No Wix image URLs are required by the pages in this package.
+Nardouw website
