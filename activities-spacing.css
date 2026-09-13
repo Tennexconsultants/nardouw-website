@@ -4,49 +4,35 @@
 }
 
 .crags-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
+  display: inline-block;
+  width: 40px;
+  height: 40px;
   margin-top: 18px;
-  padding: 4px 12px 4px 6px;
-  border: 1px solid rgba(24,24,33,.12);
-  border-radius: 999px;
-  color: #181821;
+  line-height: 0;
   text-decoration: none;
-  font-size: .68rem;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  line-height: 1;
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  transition: transform .2s ease, opacity .2s ease;
 }
 
 .crags-link img {
-  width: 28px !important;
-  height: 28px !important;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
   object-fit: contain !important;
-  flex: 0 0 28px;
 }
 
 .crags-link:hover {
-  transform: translateY(-2px);
-  border-color: rgba(24,24,33,.22);
-  box-shadow: 0 6px 16px rgba(24,24,33,.06);
+  transform: translateY(-2px) scale(1.04);
+  opacity: .88;
 }
 
 @media (max-width: 600px) {
   .page-hero + .activity {
     margin-top: 12px;
   }
+
   .crags-link {
+    width: 36px;
+    height: 36px;
     margin-top: 16px;
-    padding: 4px 10px 4px 6px;
-    font-size: .64rem;
-  }
-  .crags-link img {
-    width: 26px !important;
-    height: 26px !important;
-    flex-basis: 26px;
   }
 }
