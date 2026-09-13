@@ -3,26 +3,52 @@
   margin-top: 18px;
 }
 
+/* Compact The Topo link: small icon + one-line label */
 .crags-link {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
   margin-top: 18px;
-  line-height: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #181821;
   text-decoration: none;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .045em;
+  line-height: 1.2;
+  white-space: nowrap;
   transition: transform .2s ease, opacity .2s ease;
 }
 
 .crags-link img {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
+  display: block !important;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  min-width: 28px !important;
   object-fit: contain !important;
+  flex: 0 0 28px !important;
+  margin: 0 !important;
+}
+
+.crags-link span {
+  display: inline-block !important;
+  width: auto !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .crags-link:hover {
-  transform: translateY(-2px) scale(1.04);
-  opacity: .88;
+  transform: translateY(-1px);
+  opacity: .82;
 }
 
 @media (max-width: 600px) {
@@ -31,8 +57,15 @@
   }
 
   .crags-link {
-    width: 36px;
-    height: 36px;
     margin-top: 16px;
+    font-size: .69rem;
+  }
+
+  .crags-link img {
+    width: 26px !important;
+    height: 26px !important;
+    max-width: 26px !important;
+    min-width: 26px !important;
+    flex-basis: 26px !important;
   }
 }
