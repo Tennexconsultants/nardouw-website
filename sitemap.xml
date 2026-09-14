@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://nardouw.co.za/</loc>
-  </url>
-  <url>
-    <loc>https://nardouw.co.za/accommodation.html</loc>
-  </url>
-  <url>
-    <loc>https://nardouw.co.za/activities.html</loc>
-  </url>
-  <url>
-    <loc>https://nardouw.co.za/our-story.html</loc>
-  </url>
-  <url>
-    <loc>https://nardouw.co.za/enquire.html</loc>
-  </url>
+  <url><loc>https://nardouw.co.za/</loc></url>
+  <url><loc>https://nardouw.co.za/accommodation.html</loc></url>
+  <url><loc>https://nardouw.co.za/activities.html</loc></url>
+  <url><loc>https://nardouw.co.za/our-story.html</loc></url>
+  <url><loc>https://nardouw.co.za/enquire.html</loc></url>
+  <url><loc>https://nardouw.co.za/house-rules.html</loc></url>
+  <url><loc>https://nardouw.co.za/booking-terms.html</loc></url>
+  <url><loc>https://nardouw.co.za/privacy.html</loc></url>
+  <url><loc>https://nardouw.co.za/legal.html</loc></url>
 </urlset>
