@@ -115,7 +115,7 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
 
   galleryStyle.textContent=`
 
-    /* Close button */
+    /* Desktop close button */
     .lightbox .lightbox-close{
       position:absolute !important;
       top:22px !important;
@@ -161,7 +161,7 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
     }
 
 
-    /* Clean desktop navigation */
+    /* Desktop gallery navigation */
     .lightbox-gallery-arrow{
       position:absolute;
       top:50%;
@@ -218,18 +218,54 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
 
 
     /* Phones and touch devices:
-       swipe only, no visible arrows */
+       swipe only, no arrows */
     @media (hover:none), (pointer:coarse){
+
       .lightbox-gallery-arrow{
         display:none !important;
       }
 
       .lightbox .lightbox-close{
-        top:12px !important;
-        right:12px !important;
-        width:42px !important;
-        height:42px !important;
-        font-size:25px !important;
+        top:14px !important;
+        right:14px !important;
+
+        width:38px !important;
+        height:38px !important;
+
+        border:0 !important;
+        border-radius:12px !important;
+
+        background:rgba(15,15,20,.58) !important;
+
+        box-shadow:0 4px 16px rgba(0,0,0,.18) !important;
+
+        font-size:0 !important;
+
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
+      }
+
+      .lightbox .lightbox-close::before,
+      .lightbox .lightbox-close::after{
+        content:'';
+        position:absolute;
+
+        width:17px;
+        height:2px;
+
+        background:#fff;
+        border-radius:2px;
+
+        top:50%;
+        left:50%;
+      }
+
+      .lightbox .lightbox-close::before{
+        transform:translate(-50%,-50%) rotate(45deg);
+      }
+
+      .lightbox .lightbox-close::after{
+        transform:translate(-50%,-50%) rotate(-45deg);
       }
     }
 
