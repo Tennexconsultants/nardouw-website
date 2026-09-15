@@ -115,7 +115,7 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
 
   galleryStyle.textContent=`
 
-    /* Cleaner close button */
+    /* Close button */
     .lightbox .lightbox-close{
       position:absolute !important;
       top:22px !important;
@@ -142,6 +142,7 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
       line-height:1 !important;
 
       cursor:pointer !important;
+
       backdrop-filter:blur(8px);
       -webkit-backdrop-filter:blur(8px);
 
@@ -160,62 +161,65 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
     }
 
 
-    /* Desktop gallery arrows */
+    /* Clean desktop navigation */
     .lightbox-gallery-arrow{
       position:absolute;
       top:50%;
       transform:translateY(-50%);
       z-index:10002;
 
-      width:50px;
-      height:50px;
+      width:64px;
+      height:88px;
       padding:0;
 
       display:flex;
       align-items:center;
       justify-content:center;
 
-      border:1px solid rgba(255,255,255,.32);
-      border-radius:50%;
+      border:0;
+      border-radius:16px;
 
-      background:rgba(15,15,20,.52);
+      background:rgba(10,10,14,.10);
       color:#fff;
 
-      font-family:Arial,sans-serif;
-      font-size:34px;
-      font-weight:300;
-      line-height:1;
-
       cursor:pointer;
+      opacity:.82;
 
-      backdrop-filter:blur(8px);
-      -webkit-backdrop-filter:blur(8px);
-
-      box-shadow:0 6px 24px rgba(0,0,0,.18);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
 
       transition:
         background .2s ease,
-        border-color .2s ease,
+        opacity .2s ease,
         transform .2s ease;
     }
 
+    .lightbox-gallery-arrow svg{
+      width:31px;
+      height:31px;
+      display:block;
+      stroke:currentColor;
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));
+    }
+
     .lightbox-gallery-arrow:hover{
-      background:rgba(242,107,33,.92);
-      border-color:#f26b21;
+      background:rgba(15,15,20,.58);
+      color:#f26b21;
+      opacity:1;
     }
 
     .lightbox-gallery-prev{
-      left:28px;
+      left:18px;
     }
 
     .lightbox-gallery-next{
-      right:28px;
+      right:18px;
     }
 
 
-    /* Mobile: swipe instead of arrows */
-    @media(max-width:700px){
-
+    /* Phones and touch devices:
+       swipe only, no visible arrows */
+    @media (hover:none), (pointer:coarse){
       .lightbox-gallery-arrow{
         display:none !important;
       }
@@ -228,6 +232,12 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
         font-size:25px !important;
       }
     }
+
+    @media(max-width:700px){
+      .lightbox-gallery-arrow{
+        display:none !important;
+      }
+    }
   `;
 
   document.head.appendChild(galleryStyle);
@@ -236,13 +246,35 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
   previousButton.type='button';
   previousButton.className='lightbox-gallery-arrow lightbox-gallery-prev';
   previousButton.setAttribute('aria-label','Previous accommodation photo');
-  previousButton.innerHTML='&#8249;';
+
+  previousButton.innerHTML=`
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M15 5L8 12L15 19"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  `;
 
   const nextButton=document.createElement('button');
   nextButton.type='button';
   nextButton.className='lightbox-gallery-arrow lightbox-gallery-next';
   nextButton.setAttribute('aria-label','Next accommodation photo');
-  nextButton.innerHTML='&#8250;';
+
+  nextButton.innerHTML=`
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M9 5L16 12L9 19"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  `;
 
   lightbox.appendChild(previousButton);
   lightbox.appendChild(nextButton);
@@ -258,13 +290,13 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
   });
 
   lightbox.addEventListener('touchstart',e=>{
-    touchStartX=e.changedTouches[0].screenX;
+    touchStartX=e.changedTouches[0].clientX;
   },{
     passive:true
   });
 
   lightbox.addEventListener('touchend',e=>{
-    touchEndX=e.changedTouches[0].screenX;
+    touchEndX=e.changedTouches[0].clientX;
 
     const swipeDistance=touchEndX-touchStartX;
 
