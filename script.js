@@ -210,20 +210,6 @@ consentStyle.textContent=`
     color:#f9f9f2;
   }
 
-  .nardouw-footer-consent{
-    background:none;
-    border:0;
-    padding:0;
-    color:inherit;
-    font:inherit;
-    cursor:pointer;
-    text-decoration:none;
-  }
-
-  .nardouw-footer-consent:hover{
-    text-decoration:underline;
-  }
-
   @media(max-width:600px){
     .nardouw-consent{
       left:10px;
@@ -293,11 +279,10 @@ document.body.appendChild(consentBanner);
    Cookie preferences link in footer
 ------------------------------------------------------- */
 
-const privacyChoices=document.createElement('button');
+const privacyChoices=document.createElement('a');
 
-privacyChoices.type='button';
-privacyChoices.className='nardouw-footer-consent';
-privacyChoices.textContent='Cookie preferences';
+privacyChoices.href='#';
+privacyChoices.textContent='Cookie Preferences';
 
 const footerLegal=document.querySelector('.footer-legal-links');
 
@@ -330,12 +315,14 @@ consentBanner
   .querySelector('.nardouw-consent-decline')
   ?.addEventListener('click',()=>{
     localStorage.setItem(NARDOUW_CONSENT_KEY,'denied');
-
     deleteAnalyticsCookies();
     hideConsentBanner();
   });
 
-privacyChoices.addEventListener('click',showConsentBanner);
+privacyChoices.addEventListener('click',e=>{
+  e.preventDefault();
+  showConsentBanner();
+});
 
 
 /* -------------------------------------------------------
