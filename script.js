@@ -33,68 +33,129 @@ links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
    Lightbox
 ------------------------------------------------------- */
 
-const galleryButtons=[...document.querySelectorAll('[data-lightbox]')];
+const allLightboxButtons=[...document.querySelectorAll('[data-lightbox]')];
 const lightbox=document.querySelector('.lightbox');
 const lightboxImg=lightbox?.querySelector('img');
 const lightboxClose=lightbox?.querySelector('.lightbox-close');
 
+const pathname=window.location.pathname;
+
 const isAccommodationPage=
-  window.location.pathname.endsWith('/accommodation.html') ||
-  window.location.pathname.endsWith('accommodation.html');
+  pathname.endsWith('/accommodation.html') ||
+  pathname.endsWith('accommodation.html');
+
+const isHomePage=
+  pathname==='/' ||
+  pathname.endsWith('/index.html') ||
+  pathname.endsWith('index.html');
+
+
+/* -------------------------------------------------------
+   Define the galleries
+------------------------------------------------------- */
+
+const homeGalleryAltTexts=new Set([
+  'Outdoor wash and shower facilities at Nardouw',
+  'Cederberg landscape at Nardouw',
+  'Nardouw landscape',
+  'View from the Nardouw cabin deck across the Cederberg'
+]);
+
+let pageGalleryButtons=[];
+
+if(isAccommodationPage){
+  pageGalleryButtons=[...allLightboxButtons];
+}
+
+if(isHomePage){
+  pageGalleryButtons=allLightboxButtons.filter(button=>{
+    const image=button.querySelector('img');
+    return image&&homeGalleryAltTexts.has(image.alt);
+  });
+}
+
 
 let currentGalleryIndex=0;
+let galleryModeOpen=false;
 let touchStartX=0;
 let touchEndX=0;
+
+let previousButton=null;
+let nextButton=null;
+
+
+function setGalleryControlsVisible(show){
+  galleryModeOpen=show;
+
+  if(previousButton){
+    previousButton.hidden=!show;
+  }
+
+  if(nextButton){
+    nextButton.hidden=!show;
+  }
+}
+
 
 function closeLightbox(){
   lightbox?.classList.remove('open');
   document.body.style.overflow='';
+  setGalleryControlsVisible(false);
 }
 
+
 function showGalleryImage(index){
-  if(!lightbox||!lightboxImg||!galleryButtons.length){
+  if(!lightbox||!lightboxImg||!pageGalleryButtons.length){
     return;
   }
 
   if(index<0){
-    index=galleryButtons.length-1;
+    index=pageGalleryButtons.length-1;
   }
 
-  if(index>=galleryButtons.length){
+  if(index>=pageGalleryButtons.length){
     index=0;
   }
 
   currentGalleryIndex=index;
 
-  const button=galleryButtons[currentGalleryIndex];
+  const button=pageGalleryButtons[currentGalleryIndex];
+  const image=button.querySelector('img');
 
   lightboxImg.src=button.dataset.lightbox;
-  lightboxImg.alt=button.querySelector('img')?.alt||'Nardouw accommodation image';
+  lightboxImg.alt=image?.alt||'Nardouw image';
 }
 
-function openLightbox(button,index){
+
+function openLightbox(button){
   if(!lightbox||!lightboxImg){
     return;
   }
 
-  if(isAccommodationPage){
-    currentGalleryIndex=index;
+  const galleryIndex=pageGalleryButtons.indexOf(button);
+
+  if(galleryIndex!==-1){
+    currentGalleryIndex=galleryIndex;
     showGalleryImage(currentGalleryIndex);
+    setGalleryControlsVisible(true);
   }
   else{
     lightboxImg.src=button.dataset.lightbox;
     lightboxImg.alt=button.querySelector('img')?.alt||'Nardouw image';
+    setGalleryControlsVisible(false);
   }
 
   lightbox.classList.add('open');
   document.body.style.overflow='hidden';
 }
 
-galleryButtons.forEach((button,index)=>{
+
+allLightboxButtons.forEach(button=>{
   button.addEventListener('click',()=>{
-    openLightbox(button,index);
+    openLightbox(button);
   });
 });
+
 
 lightboxClose?.addEventListener('click',closeLightbox);
 
@@ -106,10 +167,11 @@ lightbox?.addEventListener('click',e=>{
 
 
 /* -------------------------------------------------------
-   Accommodation gallery navigation
+   Gallery navigation
+   Home + Accommodation only
 ------------------------------------------------------- */
 
-if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
+if(lightbox&&pageGalleryButtons.length>1){
 
   const galleryStyle=document.createElement('style');
 
@@ -192,6 +254,10 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
         background .2s ease,
         opacity .2s ease,
         transform .2s ease;
+    }
+
+    .lightbox-gallery-arrow[hidden]{
+      display:none !important;
     }
 
     .lightbox-gallery-arrow svg{
@@ -278,10 +344,11 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
 
   document.head.appendChild(galleryStyle);
 
-  const previousButton=document.createElement('button');
+
+  previousButton=document.createElement('button');
   previousButton.type='button';
   previousButton.className='lightbox-gallery-arrow lightbox-gallery-prev';
-  previousButton.setAttribute('aria-label','Previous accommodation photo');
+  previousButton.setAttribute('aria-label','Previous photo');
 
   previousButton.innerHTML=`
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -295,10 +362,11 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
     </svg>
   `;
 
-  const nextButton=document.createElement('button');
+
+  nextButton=document.createElement('button');
   nextButton.type='button';
   nextButton.className='lightbox-gallery-arrow lightbox-gallery-next';
-  nextButton.setAttribute('aria-label','Next accommodation photo');
+  nextButton.setAttribute('aria-label','Next photo');
 
   nextButton.innerHTML=`
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -312,26 +380,45 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
     </svg>
   `;
 
+
   lightbox.appendChild(previousButton);
   lightbox.appendChild(nextButton);
 
+
   previousButton.addEventListener('click',e=>{
     e.stopPropagation();
-    showGalleryImage(currentGalleryIndex-1);
+
+    if(galleryModeOpen){
+      showGalleryImage(currentGalleryIndex-1);
+    }
   });
+
 
   nextButton.addEventListener('click',e=>{
     e.stopPropagation();
-    showGalleryImage(currentGalleryIndex+1);
+
+    if(galleryModeOpen){
+      showGalleryImage(currentGalleryIndex+1);
+    }
   });
 
+
   lightbox.addEventListener('touchstart',e=>{
+    if(!galleryModeOpen){
+      return;
+    }
+
     touchStartX=e.changedTouches[0].clientX;
   },{
     passive:true
   });
 
+
   lightbox.addEventListener('touchend',e=>{
+    if(!galleryModeOpen){
+      return;
+    }
+
     touchEndX=e.changedTouches[0].clientX;
 
     const swipeDistance=touchEndX-touchStartX;
@@ -352,6 +439,10 @@ if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
 }
 
 
+/* -------------------------------------------------------
+   Keyboard controls
+------------------------------------------------------- */
+
 document.addEventListener('keydown',e=>{
 
   if(e.key==='Escape'){
@@ -360,7 +451,7 @@ document.addEventListener('keydown',e=>{
   }
 
   if(
-    !isAccommodationPage ||
+    !galleryModeOpen ||
     !lightbox?.classList.contains('open')
   ){
     return;
@@ -438,6 +529,7 @@ function loadGoogleAnalytics(){
 
   document.head.appendChild(script);
 }
+
 
 function deleteAnalyticsCookies(){
   document.cookie='_ga=; Max-Age=0; path=/; SameSite=Lax';
