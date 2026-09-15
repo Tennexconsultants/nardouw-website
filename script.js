@@ -30,13 +30,8 @@ links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
 
 
 /* -------------------------------------------------------
-   Lightbox
+   Gallery / lightbox setup
 ------------------------------------------------------- */
-
-const allLightboxButtons=[...document.querySelectorAll('[data-lightbox]')];
-const lightbox=document.querySelector('.lightbox');
-const lightboxImg=lightbox?.querySelector('img');
-const lightboxClose=lightbox?.querySelector('.lightbox-close');
 
 const pathname=window.location.pathname;
 
@@ -50,30 +45,47 @@ const isHomePage=
   pathname.endsWith('index.html');
 
 
-/* -------------------------------------------------------
-   Define the galleries
-------------------------------------------------------- */
+const accommodationGalleryItems=[
+  ...document.querySelectorAll('[data-lightbox]')
+];
 
-const homeGalleryAltTexts=new Set([
-  'Outdoor wash and shower facilities at Nardouw',
-  'Cederberg landscape at Nardouw',
-  'Nardouw landscape',
-  'View from the Nardouw cabin deck across the Cederberg'
-]);
+const homeGalleryItems=[
+  ...document.querySelectorAll('.home-mosaic img')
+];
 
-let pageGalleryButtons=[];
+let pageGalleryItems=[];
 
 if(isAccommodationPage){
-  pageGalleryButtons=[...allLightboxButtons];
+  pageGalleryItems=accommodationGalleryItems;
 }
 
 if(isHomePage){
-  pageGalleryButtons=allLightboxButtons.filter(button=>{
-    const image=button.querySelector('img');
-    return image&&homeGalleryAltTexts.has(image.alt);
-  });
+  pageGalleryItems=homeGalleryItems;
 }
 
+
+/* Create a lightbox automatically on the Home page */
+let lightbox=document.querySelector('.lightbox');
+
+if(!lightbox && isHomePage && pageGalleryItems.length){
+  lightbox=document.createElement('div');
+  lightbox.className='lightbox';
+  lightbox.setAttribute('role','dialog');
+  lightbox.setAttribute('aria-modal','true');
+
+  lightbox.innerHTML=`
+    <button
+      type="button"
+      aria-label="Close image"
+      class="lightbox-close">×</button>
+    <img alt="" src=""/>
+  `;
+
+  document.body.appendChild(lightbox);
+}
+
+const lightboxImg=lightbox?.querySelector('img');
+const lightboxClose=lightbox?.querySelector('.lightbox-close');
 
 let currentGalleryIndex=0;
 let galleryModeOpen=false;
@@ -83,6 +95,36 @@ let touchEndX=0;
 let previousButton=null;
 let nextButton=null;
 
+
+/* -------------------------------------------------------
+   Gallery helpers
+------------------------------------------------------- */
+
+function getGalleryImage(item){
+  if(!item){
+    return null;
+  }
+
+  if(item.matches?.('img')){
+    return item;
+  }
+
+  return item.querySelector?.('img')||null;
+}
+
+function getGallerySource(item){
+  if(!item){
+    return '';
+  }
+
+  if(item.dataset?.lightbox){
+    return item.dataset.lightbox;
+  }
+
+  const image=getGalleryImage(item);
+
+  return image?.currentSrc || image?.src || '';
+}
 
 function setGalleryControlsVisible(show){
   galleryModeOpen=show;
@@ -96,43 +138,40 @@ function setGalleryControlsVisible(show){
   }
 }
 
-
 function closeLightbox(){
   lightbox?.classList.remove('open');
   document.body.style.overflow='';
   setGalleryControlsVisible(false);
 }
 
-
 function showGalleryImage(index){
-  if(!lightbox||!lightboxImg||!pageGalleryButtons.length){
+  if(!lightbox||!lightboxImg||!pageGalleryItems.length){
     return;
   }
 
   if(index<0){
-    index=pageGalleryButtons.length-1;
+    index=pageGalleryItems.length-1;
   }
 
-  if(index>=pageGalleryButtons.length){
+  if(index>=pageGalleryItems.length){
     index=0;
   }
 
   currentGalleryIndex=index;
 
-  const button=pageGalleryButtons[currentGalleryIndex];
-  const image=button.querySelector('img');
+  const item=pageGalleryItems[currentGalleryIndex];
+  const image=getGalleryImage(item);
 
-  lightboxImg.src=button.dataset.lightbox;
+  lightboxImg.src=getGallerySource(item);
   lightboxImg.alt=image?.alt||'Nardouw image';
 }
 
-
-function openLightbox(button){
+function openGalleryItem(item){
   if(!lightbox||!lightboxImg){
     return;
   }
 
-  const galleryIndex=pageGalleryButtons.indexOf(button);
+  const galleryIndex=pageGalleryItems.indexOf(item);
 
   if(galleryIndex!==-1){
     currentGalleryIndex=galleryIndex;
@@ -140,8 +179,11 @@ function openLightbox(button){
     setGalleryControlsVisible(true);
   }
   else{
-    lightboxImg.src=button.dataset.lightbox;
-    lightboxImg.alt=button.querySelector('img')?.alt||'Nardouw image';
+    const image=getGalleryImage(item);
+
+    lightboxImg.src=getGallerySource(item);
+    lightboxImg.alt=image?.alt||'Nardouw image';
+
     setGalleryControlsVisible(false);
   }
 
@@ -150,9 +192,20 @@ function openLightbox(button){
 }
 
 
-allLightboxButtons.forEach(button=>{
-  button.addEventListener('click',()=>{
-    openLightbox(button);
+/* Existing lightbox items */
+accommodationGalleryItems.forEach(item=>{
+  item.addEventListener('click',()=>{
+    openGalleryItem(item);
+  });
+});
+
+
+/* Home-page mosaic */
+homeGalleryItems.forEach(item=>{
+  item.style.cursor='pointer';
+
+  item.addEventListener('click',()=>{
+    openGalleryItem(item);
   });
 });
 
@@ -167,17 +220,15 @@ lightbox?.addEventListener('click',e=>{
 
 
 /* -------------------------------------------------------
-   Gallery navigation
-   Home + Accommodation only
+   Home + Accommodation gallery controls
 ------------------------------------------------------- */
 
-if(lightbox&&pageGalleryButtons.length>1){
+if(lightbox&&pageGalleryItems.length>1){
 
   const galleryStyle=document.createElement('style');
 
   galleryStyle.textContent=`
 
-    /* Desktop close button */
     .lightbox .lightbox-close{
       position:absolute !important;
       top:22px !important;
@@ -223,7 +274,6 @@ if(lightbox&&pageGalleryButtons.length>1){
     }
 
 
-    /* Desktop gallery navigation */
     .lightbox-gallery-arrow{
       position:absolute;
       top:50%;
@@ -252,8 +302,7 @@ if(lightbox&&pageGalleryButtons.length>1){
 
       transition:
         background .2s ease,
-        opacity .2s ease,
-        transform .2s ease;
+        opacity .2s ease;
     }
 
     .lightbox-gallery-arrow[hidden]{
@@ -283,8 +332,7 @@ if(lightbox&&pageGalleryButtons.length>1){
     }
 
 
-    /* Phones and touch devices:
-       swipe only, no arrows */
+    /* Touch devices: swipe only */
     @media (hover:none), (pointer:coarse){
 
       .lightbox-gallery-arrow{
@@ -302,13 +350,9 @@ if(lightbox&&pageGalleryButtons.length>1){
         border-radius:12px !important;
 
         background:rgba(15,15,20,.58) !important;
-
         box-shadow:0 4px 16px rgba(0,0,0,.18) !important;
 
         font-size:0 !important;
-
-        backdrop-filter:blur(8px);
-        -webkit-backdrop-filter:blur(8px);
       }
 
       .lightbox .lightbox-close::before,
@@ -530,7 +574,6 @@ function loadGoogleAnalytics(){
   document.head.appendChild(script);
 }
 
-
 function deleteAnalyticsCookies(){
   document.cookie='_ga=; Max-Age=0; path=/; SameSite=Lax';
 
@@ -545,7 +588,7 @@ function deleteAnalyticsCookies(){
 
 
 /* -------------------------------------------------------
-   Consent banner styling
+   Consent banner
 ------------------------------------------------------- */
 
 const consentStyle=document.createElement('style');
@@ -649,10 +692,6 @@ consentStyle.textContent=`
 document.head.appendChild(consentStyle);
 
 
-/* -------------------------------------------------------
-   Create consent banner
-------------------------------------------------------- */
-
 const consentBanner=document.createElement('div');
 
 consentBanner.className='nardouw-consent';
@@ -689,7 +728,7 @@ document.body.appendChild(consentBanner);
 
 
 /* -------------------------------------------------------
-   Cookie preferences link in footer
+   Cookie preferences
 ------------------------------------------------------- */
 
 const privacyChoices=document.createElement('a');
@@ -704,10 +743,6 @@ if(footerLegal){
 }
 
 
-/* -------------------------------------------------------
-   Consent controls
-------------------------------------------------------- */
-
 function showConsentBanner(){
   consentBanner.hidden=false;
 }
@@ -715,6 +750,7 @@ function showConsentBanner(){
 function hideConsentBanner(){
   consentBanner.hidden=true;
 }
+
 
 consentBanner
   .querySelector('.nardouw-consent-accept')
@@ -724,6 +760,7 @@ consentBanner
     hideConsentBanner();
   });
 
+
 consentBanner
   .querySelector('.nardouw-consent-decline')
   ?.addEventListener('click',()=>{
@@ -732,15 +769,12 @@ consentBanner
     hideConsentBanner();
   });
 
+
 privacyChoices.addEventListener('click',e=>{
   e.preventDefault();
   showConsentBanner();
 });
 
-
-/* -------------------------------------------------------
-   Apply saved choice
-------------------------------------------------------- */
 
 const savedConsent=localStorage.getItem(NARDOUW_CONSENT_KEY);
 
