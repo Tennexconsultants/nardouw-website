@@ -28,24 +28,73 @@ links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
   }
 }));
 
+
+/* -------------------------------------------------------
+   Lightbox
+------------------------------------------------------- */
+
 const galleryButtons=[...document.querySelectorAll('[data-lightbox]')];
 const lightbox=document.querySelector('.lightbox');
 const lightboxImg=lightbox?.querySelector('img');
 const lightboxClose=lightbox?.querySelector('.lightbox-close');
+
+const isAccommodationPage=
+  window.location.pathname.endsWith('/accommodation.html') ||
+  window.location.pathname.endsWith('accommodation.html');
+
+let currentGalleryIndex=0;
+let touchStartX=0;
+let touchEndX=0;
 
 function closeLightbox(){
   lightbox?.classList.remove('open');
   document.body.style.overflow='';
 }
 
-galleryButtons.forEach(btn=>btn.addEventListener('click',()=>{
-  if(!lightbox||!lightboxImg) return;
+function showGalleryImage(index){
+  if(!lightbox||!lightboxImg||!galleryButtons.length){
+    return;
+  }
 
-  lightboxImg.src=btn.dataset.lightbox;
-  lightboxImg.alt=btn.querySelector('img')?.alt||'Nardouw image';
+  if(index<0){
+    index=galleryButtons.length-1;
+  }
+
+  if(index>=galleryButtons.length){
+    index=0;
+  }
+
+  currentGalleryIndex=index;
+
+  const button=galleryButtons[currentGalleryIndex];
+
+  lightboxImg.src=button.dataset.lightbox;
+  lightboxImg.alt=button.querySelector('img')?.alt||'Nardouw accommodation image';
+}
+
+function openLightbox(button,index){
+  if(!lightbox||!lightboxImg){
+    return;
+  }
+
+  if(isAccommodationPage){
+    currentGalleryIndex=index;
+    showGalleryImage(currentGalleryIndex);
+  }
+  else{
+    lightboxImg.src=button.dataset.lightbox;
+    lightboxImg.alt=button.querySelector('img')?.alt||'Nardouw image';
+  }
+
   lightbox.classList.add('open');
   document.body.style.overflow='hidden';
-}));
+}
+
+galleryButtons.forEach((button,index)=>{
+  button.addEventListener('click',()=>{
+    openLightbox(button,index);
+  });
+});
 
 lightboxClose?.addEventListener('click',closeLightbox);
 
@@ -55,11 +104,153 @@ lightbox?.addEventListener('click',e=>{
   }
 });
 
+
+/* -------------------------------------------------------
+   Accommodation gallery navigation
+------------------------------------------------------- */
+
+if(isAccommodationPage&&lightbox&&galleryButtons.length>1){
+
+  const galleryStyle=document.createElement('style');
+
+  galleryStyle.textContent=`
+    .lightbox-gallery-arrow{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:10002;
+      width:52px;
+      height:52px;
+      border:1px solid rgba(255,255,255,.45);
+      border-radius:50%;
+      background:rgba(24,24,33,.55);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:Arial,sans-serif;
+      font-size:38px;
+      font-weight:300;
+      line-height:1;
+      cursor:pointer;
+      backdrop-filter:blur(4px);
+      transition:
+        background .2s ease,
+        transform .2s ease;
+    }
+
+    .lightbox-gallery-arrow:hover{
+      background:rgba(24,24,33,.82);
+    }
+
+    .lightbox-gallery-prev{
+      left:24px;
+    }
+
+    .lightbox-gallery-next{
+      right:24px;
+    }
+
+    @media(max-width:700px){
+      .lightbox-gallery-arrow{
+        width:44px;
+        height:44px;
+        font-size:32px;
+      }
+
+      .lightbox-gallery-prev{
+        left:10px;
+      }
+
+      .lightbox-gallery-next{
+        right:10px;
+      }
+    }
+  `;
+
+  document.head.appendChild(galleryStyle);
+
+  const previousButton=document.createElement('button');
+  previousButton.type='button';
+  previousButton.className='lightbox-gallery-arrow lightbox-gallery-prev';
+  previousButton.setAttribute('aria-label','Previous accommodation photo');
+  previousButton.innerHTML='&#8249;';
+
+  const nextButton=document.createElement('button');
+  nextButton.type='button';
+  nextButton.className='lightbox-gallery-arrow lightbox-gallery-next';
+  nextButton.setAttribute('aria-label','Next accommodation photo');
+  nextButton.innerHTML='&#8250;';
+
+  lightbox.appendChild(previousButton);
+  lightbox.appendChild(nextButton);
+
+  previousButton.addEventListener('click',e=>{
+    e.stopPropagation();
+    showGalleryImage(currentGalleryIndex-1);
+  });
+
+  nextButton.addEventListener('click',e=>{
+    e.stopPropagation();
+    showGalleryImage(currentGalleryIndex+1);
+  });
+
+  lightbox.addEventListener('touchstart',e=>{
+    touchStartX=e.changedTouches[0].screenX;
+  },{
+    passive:true
+  });
+
+  lightbox.addEventListener('touchend',e=>{
+    touchEndX=e.changedTouches[0].screenX;
+
+    const swipeDistance=touchEndX-touchStartX;
+
+    if(Math.abs(swipeDistance)<50){
+      return;
+    }
+
+    if(swipeDistance<0){
+      showGalleryImage(currentGalleryIndex+1);
+    }
+    else{
+      showGalleryImage(currentGalleryIndex-1);
+    }
+  },{
+    passive:true
+  });
+}
+
+
 document.addEventListener('keydown',e=>{
+
   if(e.key==='Escape'){
     closeLightbox();
+    return;
+  }
+
+  if(
+    !isAccommodationPage ||
+    !lightbox?.classList.contains('open')
+  ){
+    return;
+  }
+
+  if(e.key==='ArrowLeft'){
+    e.preventDefault();
+    showGalleryImage(currentGalleryIndex-1);
+  }
+
+  if(e.key==='ArrowRight'){
+    e.preventDefault();
+    showGalleryImage(currentGalleryIndex+1);
   }
 });
+
+
+/* -------------------------------------------------------
+   Enquiry form
+------------------------------------------------------- */
 
 const form=document.querySelector('#enquiry-form');
 
