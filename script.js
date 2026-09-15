@@ -11,8 +11,10 @@ window.addEventListener('scroll',setScrolled,{passive:true});
 
 menu?.addEventListener('click',()=>{
   const open=links?.classList.toggle('open');
+
   header?.classList.toggle('menu-active',!!open);
   document.body.classList.toggle('menu-open',!!open);
+
   menu.setAttribute('aria-expanded',open?'true':'false');
   menu.textContent=open?'×':'☰';
 });
@@ -21,6 +23,7 @@ links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
   links.classList.remove('open');
   header?.classList.remove('menu-active');
   document.body.classList.remove('menu-open');
+
   menu?.setAttribute('aria-expanded','false');
 
   if(menu){
@@ -30,7 +33,7 @@ links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
 
 
 /* -------------------------------------------------------
-   Gallery / lightbox setup
+   Page detection
 ------------------------------------------------------- */
 
 const pathname=window.location.pathname;
@@ -44,14 +47,22 @@ const isHomePage=
   pathname.endsWith('/index.html') ||
   pathname.endsWith('index.html');
 
+const isOurStoryPage=
+  pathname.endsWith('/our-story.html') ||
+  pathname.endsWith('our-story.html');
+
+
+/* -------------------------------------------------------
+   Gallery items
+------------------------------------------------------- */
 
 const accommodationGalleryItems=[
   ...document.querySelectorAll('[data-lightbox]')
 ];
 
-const homeGalleryItems=[
-  ...document.querySelectorAll('.home-mosaic img')
-];
+const homeGalleryItems=isHomePage
+  ? [...document.querySelectorAll('.home-mosaic img')]
+  : [];
 
 let pageGalleryItems=[];
 
@@ -64,10 +75,45 @@ if(isHomePage){
 }
 
 
-/* Create a lightbox automatically on the Home page */
+/* -------------------------------------------------------
+   Independent enlargement images
+------------------------------------------------------- */
+
+const standaloneImages=[];
+
+/* Home page sandstone image */
+if(isHomePage){
+  const homeStandalone=
+    document.querySelector('.intro-grid > img.portrait');
+
+  if(homeStandalone){
+    standaloneImages.push(homeStandalone);
+  }
+}
+
+/* Our Story sunset image */
+if(isOurStoryPage){
+  const storyStandalone=
+    document.querySelector('.story-grid > img.portrait');
+
+  if(storyStandalone){
+    standaloneImages.push(storyStandalone);
+  }
+}
+
+
+/* -------------------------------------------------------
+   Create lightbox if page does not already have one
+------------------------------------------------------- */
+
 let lightbox=document.querySelector('.lightbox');
 
-if(!lightbox && isHomePage && pageGalleryItems.length){
+const needsLightbox=
+  pageGalleryItems.length>0 ||
+  standaloneImages.length>0 ||
+  accommodationGalleryItems.length>0;
+
+if(!lightbox&&needsLightbox){
   lightbox=document.createElement('div');
   lightbox.className='lightbox';
   lightbox.setAttribute('role','dialog');
@@ -78,6 +124,7 @@ if(!lightbox && isHomePage && pageGalleryItems.length){
       type="button"
       aria-label="Close image"
       class="lightbox-close">×</button>
+
     <img alt="" src=""/>
   `;
 
@@ -87,8 +134,14 @@ if(!lightbox && isHomePage && pageGalleryItems.length){
 const lightboxImg=lightbox?.querySelector('img');
 const lightboxClose=lightbox?.querySelector('.lightbox-close');
 
+
+/* -------------------------------------------------------
+   Lightbox state
+------------------------------------------------------- */
+
 let currentGalleryIndex=0;
 let galleryModeOpen=false;
+
 let touchStartX=0;
 let touchEndX=0;
 
@@ -97,10 +150,11 @@ let nextButton=null;
 
 
 /* -------------------------------------------------------
-   Gallery helpers
+   Helpers
 ------------------------------------------------------- */
 
 function getGalleryImage(item){
+
   if(!item){
     return null;
   }
@@ -112,7 +166,9 @@ function getGalleryImage(item){
   return item.querySelector?.('img')||null;
 }
 
+
 function getGallerySource(item){
+
   if(!item){
     return '';
   }
@@ -123,10 +179,12 @@ function getGallerySource(item){
 
   const image=getGalleryImage(item);
 
-  return image?.currentSrc || image?.src || '';
+  return image?.currentSrc||image?.src||'';
 }
 
+
 function setGalleryControlsVisible(show){
+
   galleryModeOpen=show;
 
   if(previousButton){
@@ -138,14 +196,28 @@ function setGalleryControlsVisible(show){
   }
 }
 
+
 function closeLightbox(){
+
   lightbox?.classList.remove('open');
+
   document.body.style.overflow='';
+
   setGalleryControlsVisible(false);
 }
 
+
+/* -------------------------------------------------------
+   Gallery image navigation
+------------------------------------------------------- */
+
 function showGalleryImage(index){
-  if(!lightbox||!lightboxImg||!pageGalleryItems.length){
+
+  if(
+    !lightbox ||
+    !lightboxImg ||
+    !pageGalleryItems.length
+  ){
     return;
   }
 
@@ -166,42 +238,96 @@ function showGalleryImage(index){
   lightboxImg.alt=image?.alt||'Nardouw image';
 }
 
+
 function openGalleryItem(item){
+
   if(!lightbox||!lightboxImg){
     return;
   }
 
   const galleryIndex=pageGalleryItems.indexOf(item);
 
-  if(galleryIndex!==-1){
-    currentGalleryIndex=galleryIndex;
-    showGalleryImage(currentGalleryIndex);
-    setGalleryControlsVisible(true);
+  if(galleryIndex===-1){
+    return;
   }
-  else{
-    const image=getGalleryImage(item);
 
-    lightboxImg.src=getGallerySource(item);
-    lightboxImg.alt=image?.alt||'Nardouw image';
+  currentGalleryIndex=galleryIndex;
 
-    setGalleryControlsVisible(false);
-  }
+  showGalleryImage(currentGalleryIndex);
+
+  setGalleryControlsVisible(true);
 
   lightbox.classList.add('open');
+
   document.body.style.overflow='hidden';
 }
 
 
-/* Existing lightbox items */
+/* -------------------------------------------------------
+   Independent enlarged image
+------------------------------------------------------- */
+
+function openStandaloneImage(image){
+
+  if(!lightbox||!lightboxImg||!image){
+    return;
+  }
+
+  /*
+   * Important:
+   * standalone images are NOT part of a gallery.
+   */
+  setGalleryControlsVisible(false);
+
+  lightboxImg.src=image.currentSrc||image.src;
+  lightboxImg.alt=image.alt||'Nardouw image';
+
+  lightbox.classList.add('open');
+
+  document.body.style.overflow='hidden';
+}
+
+
+/* -------------------------------------------------------
+   Existing lightbox items
+------------------------------------------------------- */
+
 accommodationGalleryItems.forEach(item=>{
+
   item.addEventListener('click',()=>{
-    openGalleryItem(item);
+
+    if(isAccommodationPage){
+      openGalleryItem(item);
+      return;
+    }
+
+    /*
+     * Retain ordinary lightbox behaviour elsewhere.
+     */
+    if(!lightbox||!lightboxImg){
+      return;
+    }
+
+    const image=getGalleryImage(item);
+
+    setGalleryControlsVisible(false);
+
+    lightboxImg.src=getGallerySource(item);
+    lightboxImg.alt=image?.alt||'Nardouw image';
+
+    lightbox.classList.add('open');
+
+    document.body.style.overflow='hidden';
   });
 });
 
 
-/* Home-page mosaic */
+/* -------------------------------------------------------
+   Home four-photo gallery
+------------------------------------------------------- */
+
 homeGalleryItems.forEach(item=>{
+
   item.style.cursor='pointer';
 
   item.addEventListener('click',()=>{
@@ -210,9 +336,28 @@ homeGalleryItems.forEach(item=>{
 });
 
 
+/* -------------------------------------------------------
+   Independent images
+------------------------------------------------------- */
+
+standaloneImages.forEach(image=>{
+
+  image.style.cursor='zoom-in';
+
+  image.addEventListener('click',()=>{
+    openStandaloneImage(image);
+  });
+});
+
+
+/* -------------------------------------------------------
+   Close lightbox
+------------------------------------------------------- */
+
 lightboxClose?.addEventListener('click',closeLightbox);
 
 lightbox?.addEventListener('click',e=>{
+
   if(e.target===lightbox){
     closeLightbox();
   }
@@ -220,23 +365,29 @@ lightbox?.addEventListener('click',e=>{
 
 
 /* -------------------------------------------------------
-   Home + Accommodation gallery controls
+   Lightbox styling
 ------------------------------------------------------- */
 
-if(lightbox&&pageGalleryItems.length>1){
+if(lightbox){
 
   const galleryStyle=document.createElement('style');
 
   galleryStyle.textContent=`
 
+    /*
+     * Desktop close button
+     */
     .lightbox .lightbox-close{
       position:absolute !important;
+
       top:22px !important;
       right:22px !important;
+
       z-index:10003 !important;
 
       width:46px !important;
       height:46px !important;
+
       padding:0 !important;
 
       display:flex !important;
@@ -259,7 +410,8 @@ if(lightbox&&pageGalleryItems.length>1){
       backdrop-filter:blur(8px);
       -webkit-backdrop-filter:blur(8px);
 
-      box-shadow:0 6px 24px rgba(0,0,0,.18);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,.18);
 
       transition:
         background .2s ease,
@@ -267,21 +419,30 @@ if(lightbox&&pageGalleryItems.length>1){
         transform .2s ease !important;
     }
 
+
     .lightbox .lightbox-close:hover{
       background:rgba(242,107,33,.92) !important;
       border-color:#f26b21 !important;
+
       transform:scale(1.06);
     }
 
 
+    /*
+     * Desktop gallery arrows
+     */
     .lightbox-gallery-arrow{
       position:absolute;
+
       top:50%;
+
       transform:translateY(-50%);
+
       z-index:10002;
 
       width:64px;
       height:88px;
+
       padding:0;
 
       display:flex;
@@ -292,9 +453,11 @@ if(lightbox&&pageGalleryItems.length>1){
       border-radius:16px;
 
       background:rgba(10,10,14,.10);
+
       color:#fff;
 
       cursor:pointer;
+
       opacity:.82;
 
       backdrop-filter:blur(3px);
@@ -305,39 +468,55 @@ if(lightbox&&pageGalleryItems.length>1){
         opacity .2s ease;
     }
 
+
     .lightbox-gallery-arrow[hidden]{
       display:none !important;
     }
 
+
     .lightbox-gallery-arrow svg{
       width:31px;
       height:31px;
+
       display:block;
+
       stroke:currentColor;
-      filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));
+
+      filter:
+        drop-shadow(0 2px 4px rgba(0,0,0,.35));
     }
+
 
     .lightbox-gallery-arrow:hover{
       background:rgba(15,15,20,.58);
+
       color:#f26b21;
+
       opacity:1;
     }
+
 
     .lightbox-gallery-prev{
       left:18px;
     }
+
 
     .lightbox-gallery-next{
       right:18px;
     }
 
 
-    /* Touch devices: swipe only */
+    /*
+     * Touch devices
+     *
+     * Swipe galleries instead of arrows.
+     */
     @media (hover:none), (pointer:coarse){
 
       .lightbox-gallery-arrow{
         display:none !important;
       }
+
 
       .lightbox .lightbox-close{
         top:14px !important;
@@ -347,39 +526,54 @@ if(lightbox&&pageGalleryItems.length>1){
         height:38px !important;
 
         border:0 !important;
+
         border-radius:12px !important;
 
-        background:rgba(15,15,20,.58) !important;
-        box-shadow:0 4px 16px rgba(0,0,0,.18) !important;
+        background:
+          rgba(15,15,20,.58) !important;
+
+        box-shadow:
+          0 4px 16px rgba(0,0,0,.18) !important;
 
         font-size:0 !important;
       }
 
+
       .lightbox .lightbox-close::before,
       .lightbox .lightbox-close::after{
         content:'';
+
         position:absolute;
 
         width:17px;
         height:2px;
 
         background:#fff;
+
         border-radius:2px;
 
         top:50%;
         left:50%;
       }
 
+
       .lightbox .lightbox-close::before{
-        transform:translate(-50%,-50%) rotate(45deg);
+        transform:
+          translate(-50%,-50%)
+          rotate(45deg);
       }
 
+
       .lightbox .lightbox-close::after{
-        transform:translate(-50%,-50%) rotate(-45deg);
+        transform:
+          translate(-50%,-50%)
+          rotate(-45deg);
       }
     }
 
+
     @media(max-width:700px){
+
       .lightbox-gallery-arrow{
         display:none !important;
       }
@@ -387,15 +581,36 @@ if(lightbox&&pageGalleryItems.length>1){
   `;
 
   document.head.appendChild(galleryStyle);
+}
 
+
+/* -------------------------------------------------------
+   Create gallery arrows only when needed
+------------------------------------------------------- */
+
+if(
+  lightbox &&
+  pageGalleryItems.length>1
+){
 
   previousButton=document.createElement('button');
+
   previousButton.type='button';
-  previousButton.className='lightbox-gallery-arrow lightbox-gallery-prev';
-  previousButton.setAttribute('aria-label','Previous photo');
+
+  previousButton.className=
+    'lightbox-gallery-arrow lightbox-gallery-prev';
+
+  previousButton.setAttribute(
+    'aria-label',
+    'Previous photo'
+  );
 
   previousButton.innerHTML=`
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true">
+
       <path
         d="M15 5L8 12L15 19"
         stroke="currentColor"
@@ -403,17 +618,29 @@ if(lightbox&&pageGalleryItems.length>1){
         stroke-linecap="round"
         stroke-linejoin="round"
       />
+
     </svg>
   `;
 
 
   nextButton=document.createElement('button');
+
   nextButton.type='button';
-  nextButton.className='lightbox-gallery-arrow lightbox-gallery-next';
-  nextButton.setAttribute('aria-label','Next photo');
+
+  nextButton.className=
+    'lightbox-gallery-arrow lightbox-gallery-next';
+
+  nextButton.setAttribute(
+    'aria-label',
+    'Next photo'
+  );
 
   nextButton.innerHTML=`
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true">
+
       <path
         d="M9 5L16 12L9 19"
         stroke="currentColor"
@@ -421,6 +648,7 @@ if(lightbox&&pageGalleryItems.length>1){
         stroke-linecap="round"
         stroke-linejoin="round"
       />
+
     </svg>
   `;
 
@@ -429,54 +657,83 @@ if(lightbox&&pageGalleryItems.length>1){
   lightbox.appendChild(nextButton);
 
 
+  /*
+   * Hide arrows until an actual gallery image opens.
+   */
+  previousButton.hidden=true;
+  nextButton.hidden=true;
+
+
   previousButton.addEventListener('click',e=>{
+
     e.stopPropagation();
 
     if(galleryModeOpen){
-      showGalleryImage(currentGalleryIndex-1);
+      showGalleryImage(
+        currentGalleryIndex-1
+      );
     }
   });
 
 
   nextButton.addEventListener('click',e=>{
+
     e.stopPropagation();
 
     if(galleryModeOpen){
-      showGalleryImage(currentGalleryIndex+1);
+      showGalleryImage(
+        currentGalleryIndex+1
+      );
     }
   });
 
 
+  /*
+   * Swipe navigation.
+   */
   lightbox.addEventListener('touchstart',e=>{
+
     if(!galleryModeOpen){
       return;
     }
 
-    touchStartX=e.changedTouches[0].clientX;
+    touchStartX=
+      e.changedTouches[0].clientX;
+
   },{
     passive:true
   });
 
 
   lightbox.addEventListener('touchend',e=>{
+
     if(!galleryModeOpen){
       return;
     }
 
-    touchEndX=e.changedTouches[0].clientX;
+    touchEndX=
+      e.changedTouches[0].clientX;
 
-    const swipeDistance=touchEndX-touchStartX;
+    const swipeDistance=
+      touchEndX-touchStartX;
 
     if(Math.abs(swipeDistance)<50){
       return;
     }
 
     if(swipeDistance<0){
-      showGalleryImage(currentGalleryIndex+1);
+
+      showGalleryImage(
+        currentGalleryIndex+1
+      );
     }
     else{
-      showGalleryImage(currentGalleryIndex-1);
+
+      showGalleryImage(
+        currentGalleryIndex-1
+      );
     }
+
   },{
     passive:true
   });
@@ -490,10 +747,19 @@ if(lightbox&&pageGalleryItems.length>1){
 document.addEventListener('keydown',e=>{
 
   if(e.key==='Escape'){
+
     closeLightbox();
+
     return;
   }
 
+
+  /*
+   * Left/right navigation only works
+   * when an actual carousel gallery is open.
+   *
+   * Standalone images are unaffected.
+   */
   if(
     !galleryModeOpen ||
     !lightbox?.classList.contains('open')
@@ -501,14 +767,24 @@ document.addEventListener('keydown',e=>{
     return;
   }
 
+
   if(e.key==='ArrowLeft'){
+
     e.preventDefault();
-    showGalleryImage(currentGalleryIndex-1);
+
+    showGalleryImage(
+      currentGalleryIndex-1
+    );
   }
 
+
   if(e.key==='ArrowRight'){
+
     e.preventDefault();
-    showGalleryImage(currentGalleryIndex+1);
+
+    showGalleryImage(
+      currentGalleryIndex+1
+    );
   }
 });
 
@@ -520,23 +796,41 @@ document.addEventListener('keydown',e=>{
 const form=document.querySelector('#enquiry-form');
 
 if(form){
-  const arrival=form.querySelector('#arrival');
-  const departure=form.querySelector('#departure');
-  const today=new Date().toISOString().split('T')[0];
+
+  const arrival=
+    form.querySelector('#arrival');
+
+  const departure=
+    form.querySelector('#departure');
+
+  const today=
+    new Date()
+      .toISOString()
+      .split('T')[0];
+
 
   if(arrival){
     arrival.min=today;
   }
 
+
   if(departure){
     departure.min=today;
   }
 
-  arrival?.addEventListener('change',()=>{
-    if(departure){
-      departure.min=arrival.value||today;
 
-      if(departure.value&&departure.value<=arrival.value){
+  arrival?.addEventListener('change',()=>{
+
+    if(departure){
+
+      departure.min=
+        arrival.value||today;
+
+
+      if(
+        departure.value &&
+        departure.value<=arrival.value
+      ){
         departure.value='';
       }
     }
@@ -548,140 +842,228 @@ if(form){
    Nardouw analytics consent
 ------------------------------------------------------- */
 
-const NARDOUW_GA_ID='G-21PY5FML65';
-const NARDOUW_CONSENT_KEY='nardouwAnalyticsConsent';
+const NARDOUW_GA_ID=
+  'G-21PY5FML65';
+
+const NARDOUW_CONSENT_KEY=
+  'nardouwAnalyticsConsent';
+
 
 function loadGoogleAnalytics(){
+
   if(window.nardouwAnalyticsLoaded){
     return;
   }
 
   window.nardouwAnalyticsLoaded=true;
 
-  window.dataLayer=window.dataLayer||[];
+  window.dataLayer=
+    window.dataLayer||[];
+
 
   window.gtag=function(){
     window.dataLayer.push(arguments);
   };
 
-  gtag('js',new Date());
-  gtag('config',NARDOUW_GA_ID);
 
-  const script=document.createElement('script');
+  gtag('js',new Date());
+
+  gtag(
+    'config',
+    NARDOUW_GA_ID
+  );
+
+
+  const script=
+    document.createElement('script');
+
   script.async=true;
-  script.src=`https://www.googletagmanager.com/gtag/js?id=${NARDOUW_GA_ID}`;
+
+  script.src=
+    `https://www.googletagmanager.com/gtag/js?id=${NARDOUW_GA_ID}`;
 
   document.head.appendChild(script);
 }
 
+
 function deleteAnalyticsCookies(){
-  document.cookie='_ga=; Max-Age=0; path=/; SameSite=Lax';
 
-  document.cookie.split(';').forEach(cookie=>{
-    const name=cookie.split('=')[0].trim();
+  document.cookie=
+    '_ga=; Max-Age=0; path=/; SameSite=Lax';
 
-    if(name.startsWith('_ga_')){
-      document.cookie=`${name}=; Max-Age=0; path=/; SameSite=Lax`;
-    }
-  });
+
+  document.cookie
+    .split(';')
+    .forEach(cookie=>{
+
+      const name=
+        cookie
+          .split('=')[0]
+          .trim();
+
+
+      if(name.startsWith('_ga_')){
+
+        document.cookie=
+          `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+      }
+    });
 }
 
 
 /* -------------------------------------------------------
-   Consent banner
+   Consent banner styling
 ------------------------------------------------------- */
 
-const consentStyle=document.createElement('style');
+const consentStyle=
+  document.createElement('style');
+
 
 consentStyle.textContent=`
+
   .nardouw-consent{
     position:fixed;
+
     left:24px;
     right:24px;
     bottom:24px;
+
     z-index:10000;
+
     max-width:760px;
+
     margin:0 auto;
+
     padding:24px 26px;
+
     background:#181821;
     color:#f9f9f2;
-    border:1px solid rgba(249,249,242,.16);
+
+    border:
+      1px solid rgba(249,249,242,.16);
+
     border-radius:20px;
-    box-shadow:0 18px 55px rgba(24,24,33,.28);
-    font-family:Montserrat,Arial,sans-serif;
+
+    box-shadow:
+      0 18px 55px rgba(24,24,33,.28);
+
+    font-family:
+      Montserrat,Arial,sans-serif;
   }
+
 
   .nardouw-consent[hidden]{
     display:none;
   }
 
+
   .nardouw-consent-title{
     margin:0 0 8px;
-    font-family:'Cormorant Garamond',Georgia,serif;
+
+    font-family:
+      'Cormorant Garamond',
+      Georgia,
+      serif;
+
     font-size:2rem;
+
     font-weight:500;
+
     line-height:1.05;
   }
 
+
   .nardouw-consent-text{
     margin:0;
+
     font-size:.86rem;
+
     line-height:1.65;
+
     opacity:.92;
   }
 
+
   .nardouw-consent-text a{
     color:#ff8a4c;
+
     text-decoration:underline;
+
     text-underline-offset:3px;
   }
 
+
   .nardouw-consent-actions{
     display:flex;
+
     flex-wrap:wrap;
+
     gap:10px;
+
     margin-top:18px;
   }
 
+
   .nardouw-consent-button{
     min-height:44px;
+
     padding:0 18px;
+
     border-radius:999px;
+
     border:1px solid #f26b21;
-    font-family:Montserrat,Arial,sans-serif;
+
+    font-family:
+      Montserrat,Arial,sans-serif;
+
     font-size:.68rem;
+
     font-weight:600;
+
     letter-spacing:.12em;
+
     text-transform:uppercase;
+
     cursor:pointer;
   }
 
+
   .nardouw-consent-accept{
     background:#f26b21;
+
     color:#f9f9f2;
   }
+
 
   .nardouw-consent-decline{
     background:transparent;
+
     color:#f9f9f2;
   }
 
+
   @media(max-width:600px){
+
     .nardouw-consent{
       left:10px;
       right:10px;
       bottom:10px;
+
       padding:21px 20px;
+
       border-radius:18px;
     }
+
 
     .nardouw-consent-title{
       font-size:1.75rem;
     }
 
+
     .nardouw-consent-actions{
       flex-direction:column;
     }
+
 
     .nardouw-consent-button{
       width:100%;
@@ -689,98 +1071,202 @@ consentStyle.textContent=`
   }
 `;
 
-document.head.appendChild(consentStyle);
 
-
-const consentBanner=document.createElement('div');
-
-consentBanner.className='nardouw-consent';
-consentBanner.hidden=true;
-consentBanner.setAttribute('role','dialog');
-consentBanner.setAttribute('aria-label','Analytics privacy choices');
-
-consentBanner.innerHTML=`
-  <h2 class="nardouw-consent-title">Your privacy</h2>
-
-  <p class="nardouw-consent-text">
-    Nardouw uses optional Google Analytics cookies to understand how visitors
-    use the website and to improve the experience. Analytics will only load
-    if you choose to accept it.
-    <a href="privacy.html">Read our Privacy Notice</a>.
-  </p>
-
-  <div class="nardouw-consent-actions">
-    <button
-      type="button"
-      class="nardouw-consent-button nardouw-consent-accept">
-      Accept analytics
-    </button>
-
-    <button
-      type="button"
-      class="nardouw-consent-button nardouw-consent-decline">
-      Decline
-    </button>
-  </div>
-`;
-
-document.body.appendChild(consentBanner);
+document.head.appendChild(
+  consentStyle
+);
 
 
 /* -------------------------------------------------------
-   Cookie preferences
+   Create consent banner
 ------------------------------------------------------- */
 
-const privacyChoices=document.createElement('a');
+const consentBanner=
+  document.createElement('div');
+
+
+consentBanner.className=
+  'nardouw-consent';
+
+
+consentBanner.hidden=true;
+
+
+consentBanner.setAttribute(
+  'role',
+  'dialog'
+);
+
+
+consentBanner.setAttribute(
+  'aria-label',
+  'Analytics privacy choices'
+);
+
+
+consentBanner.innerHTML=`
+
+  <h2 class="nardouw-consent-title">
+    Your privacy
+  </h2>
+
+  <p class="nardouw-consent-text">
+
+    Nardouw uses optional Google Analytics cookies
+    to understand how visitors use the website
+    and to improve the experience.
+
+    Analytics will only load if you choose to accept it.
+
+    <a href="privacy.html">
+      Read our Privacy Notice
+    </a>.
+
+  </p>
+
+  <div class="nardouw-consent-actions">
+
+    <button
+      type="button"
+      class="
+        nardouw-consent-button
+        nardouw-consent-accept">
+
+      Accept analytics
+
+    </button>
+
+
+    <button
+      type="button"
+      class="
+        nardouw-consent-button
+        nardouw-consent-decline">
+
+      Decline
+
+    </button>
+
+  </div>
+`;
+
+
+document.body.appendChild(
+  consentBanner
+);
+
+
+/* -------------------------------------------------------
+   Cookie preferences link
+------------------------------------------------------- */
+
+const privacyChoices=
+  document.createElement('a');
+
 
 privacyChoices.href='#';
-privacyChoices.textContent='Cookie Preferences';
 
-const footerLegal=document.querySelector('.footer-legal-links');
+
+privacyChoices.textContent=
+  'Cookie Preferences';
+
+
+const footerLegal=
+  document.querySelector(
+    '.footer-legal-links'
+  );
+
 
 if(footerLegal){
-  footerLegal.appendChild(privacyChoices);
+
+  footerLegal.appendChild(
+    privacyChoices
+  );
 }
 
 
+/* -------------------------------------------------------
+   Consent controls
+------------------------------------------------------- */
+
 function showConsentBanner(){
+
   consentBanner.hidden=false;
 }
 
+
 function hideConsentBanner(){
+
   consentBanner.hidden=true;
 }
 
 
 consentBanner
-  .querySelector('.nardouw-consent-accept')
-  ?.addEventListener('click',()=>{
-    localStorage.setItem(NARDOUW_CONSENT_KEY,'granted');
-    loadGoogleAnalytics();
-    hideConsentBanner();
-  });
+  .querySelector(
+    '.nardouw-consent-accept'
+  )
+  ?.addEventListener(
+    'click',
+    ()=>{
+
+      localStorage.setItem(
+        NARDOUW_CONSENT_KEY,
+        'granted'
+      );
+
+      loadGoogleAnalytics();
+
+      hideConsentBanner();
+    }
+  );
 
 
 consentBanner
-  .querySelector('.nardouw-consent-decline')
-  ?.addEventListener('click',()=>{
-    localStorage.setItem(NARDOUW_CONSENT_KEY,'denied');
-    deleteAnalyticsCookies();
-    hideConsentBanner();
-  });
+  .querySelector(
+    '.nardouw-consent-decline'
+  )
+  ?.addEventListener(
+    'click',
+    ()=>{
+
+      localStorage.setItem(
+        NARDOUW_CONSENT_KEY,
+        'denied'
+      );
+
+      deleteAnalyticsCookies();
+
+      hideConsentBanner();
+    }
+  );
 
 
-privacyChoices.addEventListener('click',e=>{
-  e.preventDefault();
-  showConsentBanner();
-});
+privacyChoices.addEventListener(
+  'click',
+  e=>{
+
+    e.preventDefault();
+
+    showConsentBanner();
+  }
+);
 
 
-const savedConsent=localStorage.getItem(NARDOUW_CONSENT_KEY);
+/* -------------------------------------------------------
+   Apply saved consent
+------------------------------------------------------- */
+
+const savedConsent=
+  localStorage.getItem(
+    NARDOUW_CONSENT_KEY
+  );
+
 
 if(savedConsent==='granted'){
+
   loadGoogleAnalytics();
 }
 else if(savedConsent!=='denied'){
+
   showConsentBanner();
 }
