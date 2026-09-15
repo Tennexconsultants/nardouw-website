@@ -22,7 +22,10 @@ links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
   header?.classList.remove('menu-active');
   document.body.classList.remove('menu-open');
   menu?.setAttribute('aria-expanded','false');
-  if(menu) menu.textContent='☰';
+
+  if(menu){
+    menu.textContent='☰';
+  }
 }));
 
 const galleryButtons=[...document.querySelectorAll('[data-lightbox]')];
@@ -37,6 +40,7 @@ function closeLightbox(){
 
 galleryButtons.forEach(btn=>btn.addEventListener('click',()=>{
   if(!lightbox||!lightboxImg) return;
+
   lightboxImg.src=btn.dataset.lightbox;
   lightboxImg.alt=btn.querySelector('img')?.alt||'Nardouw image';
   lightbox.classList.add('open');
@@ -46,11 +50,15 @@ galleryButtons.forEach(btn=>btn.addEventListener('click',()=>{
 lightboxClose?.addEventListener('click',closeLightbox);
 
 lightbox?.addEventListener('click',e=>{
-  if(e.target===lightbox) closeLightbox();
+  if(e.target===lightbox){
+    closeLightbox();
+  }
 });
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') closeLightbox();
+  if(e.key==='Escape'){
+    closeLightbox();
+  }
 });
 
 const form=document.querySelector('#enquiry-form');
@@ -60,12 +68,18 @@ if(form){
   const departure=form.querySelector('#departure');
   const today=new Date().toISOString().split('T')[0];
 
-  if(arrival) arrival.min=today;
-  if(departure) departure.min=today;
+  if(arrival){
+    arrival.min=today;
+  }
+
+  if(departure){
+    departure.min=today;
+  }
 
   arrival?.addEventListener('change',()=>{
     if(departure){
       departure.min=arrival.value||today;
+
       if(departure.value&&departure.value<=arrival.value){
         departure.value='';
       }
@@ -82,11 +96,17 @@ const NARDOUW_GA_ID='G-21PY5FML65';
 const NARDOUW_CONSENT_KEY='nardouwAnalyticsConsent';
 
 function loadGoogleAnalytics(){
-  if(window.nardouwAnalyticsLoaded) return;
+  if(window.nardouwAnalyticsLoaded){
+    return;
+  }
+
   window.nardouwAnalyticsLoaded=true;
 
   window.dataLayer=window.dataLayer||[];
-  window.gtag=function(){dataLayer.push(arguments);};
+
+  window.gtag=function(){
+    window.dataLayer.push(arguments);
+  };
 
   gtag('js',new Date());
   gtag('config',NARDOUW_GA_ID);
@@ -94,6 +114,7 @@ function loadGoogleAnalytics(){
   const script=document.createElement('script');
   script.async=true;
   script.src=`https://www.googletagmanager.com/gtag/js?id=${NARDOUW_GA_ID}`;
+
   document.head.appendChild(script);
 }
 
@@ -108,6 +129,11 @@ function deleteAnalyticsCookies(){
     }
   });
 }
+
+
+/* -------------------------------------------------------
+   Consent banner styling
+------------------------------------------------------- */
 
 const consentStyle=document.createElement('style');
 
@@ -184,22 +210,18 @@ consentStyle.textContent=`
     color:#f9f9f2;
   }
 
-  .nardouw-consent-settings{
-    position:fixed;
-    left:16px;
-    bottom:16px;
-    z-index:9999;
-    padding:8px 12px;
-    border:1px solid rgba(24,24,33,.18);
-    border-radius:999px;
-    background:#f9f9f2;
-    color:#181821;
-    box-shadow:0 5px 18px rgba(24,24,33,.12);
-    font-family:Montserrat,Arial,sans-serif;
-    font-size:.62rem;
-    letter-spacing:.09em;
-    text-transform:uppercase;
+  .nardouw-footer-consent{
+    background:none;
+    border:0;
+    padding:0;
+    color:inherit;
+    font:inherit;
     cursor:pointer;
+    text-decoration:none;
+  }
+
+  .nardouw-footer-consent:hover{
+    text-decoration:underline;
   }
 
   @media(max-width:600px){
@@ -227,7 +249,13 @@ consentStyle.textContent=`
 
 document.head.appendChild(consentStyle);
 
+
+/* -------------------------------------------------------
+   Create consent banner
+------------------------------------------------------- */
+
 const consentBanner=document.createElement('div');
+
 consentBanner.className='nardouw-consent';
 consentBanner.hidden=true;
 consentBanner.setAttribute('role','dialog');
@@ -235,6 +263,7 @@ consentBanner.setAttribute('aria-label','Analytics privacy choices');
 
 consentBanner.innerHTML=`
   <h2 class="nardouw-consent-title">Your privacy</h2>
+
   <p class="nardouw-consent-text">
     Nardouw uses optional Google Analytics cookies to understand how visitors
     use the website and to improve the experience. Analytics will only load
@@ -259,22 +288,34 @@ consentBanner.innerHTML=`
 
 document.body.appendChild(consentBanner);
 
-const privacyChoices=document.createElement('button');
-privacyChoices.type='button';
-privacyChoices.className='nardouw-consent-settings';
-privacyChoices.textContent='Privacy choices';
-privacyChoices.hidden=true;
 
-document.body.appendChild(privacyChoices);
+/* -------------------------------------------------------
+   Cookie preferences link in footer
+------------------------------------------------------- */
+
+const privacyChoices=document.createElement('button');
+
+privacyChoices.type='button';
+privacyChoices.className='nardouw-footer-consent';
+privacyChoices.textContent='Cookie preferences';
+
+const footerLegal=document.querySelector('.footer-legal-links');
+
+if(footerLegal){
+  footerLegal.appendChild(privacyChoices);
+}
+
+
+/* -------------------------------------------------------
+   Consent controls
+------------------------------------------------------- */
 
 function showConsentBanner(){
   consentBanner.hidden=false;
-  privacyChoices.hidden=true;
 }
 
 function hideConsentBanner(){
   consentBanner.hidden=true;
-  privacyChoices.hidden=false;
 }
 
 consentBanner
@@ -290,27 +331,22 @@ consentBanner
   ?.addEventListener('click',()=>{
     localStorage.setItem(NARDOUW_CONSENT_KEY,'denied');
 
-    if(typeof window.gtag==='function'){
-      gtag('consent','update',{
-        analytics_storage:'denied'
-      });
-    }
-
     deleteAnalyticsCookies();
     hideConsentBanner();
   });
 
 privacyChoices.addEventListener('click',showConsentBanner);
 
+
+/* -------------------------------------------------------
+   Apply saved choice
+------------------------------------------------------- */
+
 const savedConsent=localStorage.getItem(NARDOUW_CONSENT_KEY);
 
 if(savedConsent==='granted'){
   loadGoogleAnalytics();
-  hideConsentBanner();
 }
-else if(savedConsent==='denied'){
-  hideConsentBanner();
-}
-else{
+else if(savedConsent!=='denied'){
   showConsentBanner();
 }
